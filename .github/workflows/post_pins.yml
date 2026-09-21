@@ -1,0 +1,38 @@
+name: Pinterest Auto-Poster
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+    - cron: '0 11 * * *'
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+
+jobs:
+  post-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install requests Pillow
+      - name: Restore state
+        uses: actions/cache@v4
+        with:
+          path: poster_state.json
+          key: pinterest-state-${{ github.run_id }}
+          restore-keys: |
+            pinterest-state-
+      - name: Post pins
+        env:
+          PINTEREST_TOKEN: ${{ secrets.PINTEREST_TOKEN }}
+        run: python pinterest_poster.py
+      - name: Save state
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: poster_state.json
+          key: pinterest-state-${{ github.run_id }}
